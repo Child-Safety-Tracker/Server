@@ -1,27 +1,42 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog"
+	"net/http"
+	"os"
+	"time"
 )
 
 func main() {
 	// Init Echo instance
-	e := echo.New()
+	echoInstance := echo.New()
+
+	// Logger init with pretty format and timestamp enabled
+	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
 
 	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	echoInstance.Use(middleware.Recover())
+	// Logger Middleware with enabled log sections
+	echoInstance.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogURI:      true,
+		LogStatus:   true,
+		LogRemoteIP: true,
+		LogValuesFunc: func(echoContext echo.Context, loggerValues middleware.RequestLoggerValues) error {
+			logger.Info().Str("Address", loggerValues.RemoteIP).Str("URI", loggerValues.URI).Int("Status", loggerValues.Status).Msg("Request")
+			return nil
+		},
+	}))
 
 	// Routes
-	e.GET("/", hello)
+	echoInstance.GET("/", hello)
 
 	// Start the server and logging result
-	e.Logger.Fatal(e.Start(":1234"))
+	logger.Fatal().AnErr("Error:", echoInstance.Start(":1234"))
+
 }
 
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello world")
+func hello(echoContext echo.Context) error {
+	return echoContext.String(http.StatusOK, "Hello world")
 }

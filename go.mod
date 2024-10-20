@@ -2,7 +2,10 @@ module server
 
 go 1.22.7
 
-require github.com/labstack/echo/v4 v4.12.0
+require (
+	github.com/labstack/echo/v4 v4.12.0
+	github.com/rs/zerolog v1.33.0
+)
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
