@@ -1,22 +1,33 @@
 package decrypt
 
 import (
-	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"os/exec"
+	"server/location/models"
 )
 
-func DecryptLocation(payload string) {
+func DecryptLocation(locationResultValue models.LocationResult) models.DecryptedLocationResult {
 
-	_, err := base64.StdEncoding.DecodeString(payload)
+	fmt.Printf("%+v\n", locationResultValue)
+	// Exec the decryption script on the payload
+	decodeOutput, err := exec.Command("bash", "-c", "python3 location/decrypt/decrypt.py "+locationResultValue.Payload).Output()
 	if err != nil {
-		log.Fatal().Err(err).Msg("[Location] Failed to decode payload")
+		log.Fatal().Err(err).Msg("[Location] Failed to decrypt payload")
 	}
 
-	decodeOutput, err := exec.Command("bash", "-c", "python3 location/decrypt/decrypt.py "+payload).Output()
+	decryptedLocation := models.DecryptedLocation{}
+	err = json.Unmarshal(decodeOutput, &decryptedLocation)
 	if err != nil {
-		log.Fatal().Err(err).Msg("[Location failed to decrypt payload]")
+		log.Err(err).Msg("[Location] Error unmarshalling the decrypted location")
 	}
-	println(string(decodeOutput))
 
+	return models.DecryptedLocationResult{
+		DatePublished: locationResultValue.DatePublished,
+		Payload:       decryptedLocation,
+		Description:   locationResultValue.Description,
+		Id:            locationResultValue.Id,
+		StatusCode:    locationResultValue.StatusCode,
+	}
 }

@@ -1,5 +1,6 @@
 import base64
 import sys
+import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -64,7 +65,7 @@ class FindMyTagCrypto:
         latitude = int.from_bytes(data[0:4], "big", signed=True) / 10000000.0
         longitude = int.from_bytes(data[4:8], "big", signed=True) / 10000000.0
         confidence = int.from_bytes(data[8:9], "big")
-        return {"lat": latitude, "lon": longitude, "conf": confidence}
+        return {"latitude": latitude, "longitude": longitude, "confidence": confidence}
 
     @staticmethod
     def __generate_new_private_key():
@@ -95,4 +96,6 @@ class FindMyTagCrypto:
 
 tag = FindMyTagCrypto("63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw==")
 decrypt = tag.decrypt_message(sys.argv[1])
-print(decrypt)
+
+# Using json dumps to keep the json format in stdout
+print(json.dumps(decrypt))

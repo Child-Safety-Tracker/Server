@@ -4,35 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"server/location/models"
+
+	//"fmt"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
+	"server/location/decrypt"
 )
-
-// Structure of the POST request body
-type postRequestBody struct {
-	Ids  []string `json:"ids"`
-	Days int      `json:"days"`
-}
-
-// Structure of each location result
-type locationResult struct {
-	DatePublished int    `json:"datePublished"`
-	Payload       string `json:"payload"`
-	Description   string `json:"description"`
-	Id            string `json:"id"`
-	StatusCode    int    `json:"statusCode"`
-}
-
-// Structure of the response body
-type postResponseBody struct {
-	Results    []locationResult `json:"results"`
-	StatusCode string           `json:"statusCode"`
-}
 
 func FetchLocation(URL string, id []string, days int) error {
 	// Encode the request body
-	postBody, err := json.Marshal(&postRequestBody{Ids: id, Days: days})
+	postBody, err := json.Marshal(&models.PostRequestBody{Ids: id, Days: days})
 	if err != nil {
 		log.Err(err).Msg("[Location] Error encode the request body")
 	}
@@ -51,17 +34,15 @@ func FetchLocation(URL string, id []string, days int) error {
 		log.Err(err).Msg("[Location] Error reading the response body")
 	}
 
-	fmt.Println(string(responseBody))
+	//fmt.Println(string(responseBody))
 
-	postResponseBodyValue := postResponseBody{}
+	postResponseBodyValue := models.PostResponseBody{}
 	err = json.Unmarshal(responseBody, &postResponseBodyValue)
 	if err != nil {
 		log.Err(err).Msg("[Location] Error unmarshalling the response body")
 	}
 
-	for index, locationResultValue := range postResponseBodyValue.Results {
-		fmt.Println(index, locationResultValue)
-	}
+	fmt.Println(decrypt.DecryptLocation(postResponseBodyValue.Results[0]))
 
 	return nil
 }
