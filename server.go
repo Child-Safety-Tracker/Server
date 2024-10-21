@@ -4,8 +4,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
+	"server/location"
 	"time"
 )
 
@@ -15,6 +17,8 @@ func main() {
 
 	// Logger init with pretty format and timestamp enabled
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
+	// Set the logger to use globally
+	log.Logger = logger
 
 	// Middleware
 	echoInstance.Use(middleware.Recover())
@@ -32,9 +36,9 @@ func main() {
 	// Routes
 	echoInstance.GET("/", hello)
 
+	location.GetLocations()
 	// Start the server and logging result
-	logger.Fatal().AnErr("Error:", echoInstance.Start(":1234"))
-
+	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
 }
 
 func hello(echoContext echo.Context) error {
