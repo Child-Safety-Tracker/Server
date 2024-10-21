@@ -36,7 +36,7 @@ func main() {
 	// Routes
 	echoInstance.GET("/", hello)
 
-	location.GetLocations()
+	_ = location.FetchLocation("http://104.214.184.97:6176", []string{"g994J95i/w3VEQLhPsGn9hr/51kGrRbuO3/qbcYcbo0="}, 5)
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
 }
