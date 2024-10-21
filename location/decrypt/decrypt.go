@@ -2,7 +2,6 @@ package decrypt
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/rs/zerolog/log"
 	"os/exec"
 	"server/location/models"
