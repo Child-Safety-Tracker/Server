@@ -9,14 +9,30 @@ import (
 	"net/http"
 )
 
-type requestBody struct {
+// Structure of the POST request body
+type postRequestBody struct {
 	Ids  []string `json:"ids"`
 	Days int      `json:"days"`
 }
 
+// Structure of each location result
+type locationResult struct {
+	DatePublished int    `json:"datePublished"`
+	Payload       string `json:"payload"`
+	Description   string `json:"description"`
+	Id            string `json:"id"`
+	StatusCode    int    `json:"statusCode"`
+}
+
+// Structure of the response body
+type postResponseBody struct {
+	Results    []locationResult `json:"results"`
+	StatusCode string           `json:"statusCode"`
+}
+
 func FetchLocation(URL string, id []string, days int) error {
 	// Encode the request body
-	postBody, err := json.Marshal(&requestBody{Ids: id, Days: days})
+	postBody, err := json.Marshal(&postRequestBody{Ids: id, Days: days})
 	if err != nil {
 		log.Err(err).Msg("[Location] Error encode the request body")
 	}
@@ -36,6 +52,16 @@ func FetchLocation(URL string, id []string, days int) error {
 	}
 
 	fmt.Println(string(responseBody))
+
+	postResponseBodyValue := postResponseBody{}
+	err = json.Unmarshal(responseBody, &postResponseBodyValue)
+	if err != nil {
+		log.Err(err).Msg("[Location] Error unmarshalling the response body")
+	}
+
+	for index, locationResultValue := range postResponseBodyValue.Results {
+		fmt.Println(index, locationResultValue)
+	}
 
 	return nil
 }
