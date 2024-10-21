@@ -1,61 +1,98 @@
 import base64
+import sys
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.padding import PKCS7
-import codecs
-import struct
-import hashlib
-
-payload = "LMC3CQMEuRm81M3E0+Y70gb8KL1NEZ1rdj1GWz7RzlZR0N3odV6BqhJFW0CizXrrKCZk3+/g26hvgDJF6YAfdqfbYsMIHj4VoCuSFFMAWLdbavJuTK2t7w=="
-
-data = base64.b64decode(payload)
+from cryptography.hazmat.primitives import hashes
 
 
-def bytes_to_int(b):
-    return int(codecs.encode(b, "hex"), 16)
+class FindMyTagCrypto:
+    def __init__(self, private_key: str = None):
+        if private_key is not None:
+            self._private_key = base64.b64decode(private_key)
+        else:
+            self._private_key = self.__generate_new_private_key()
+
+    def get_advertisement_key(self) -> str:
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(
+            self.__derive_elliptic_curve_private_key(
+                self._private_key, ec.SECP224R1())
+            .public_key()
+            .public_bytes(Encoding.X962, PublicFormat.CompressedPoint)[1:]
+        )
+        return base64.b64encode(digest.finalize()).decode()
+
+    @staticmethod
+    def __derive_elliptic_curve_private_key(
+            private_key: bytes, curve: ec.EllipticCurve
+    ):
+        return ec.derive_private_key(
+            int.from_bytes(private_key, "big"), curve, default_backend()
+        )
+
+    def __derive_shared_key_from_private_key_and_eph_key(self, eph_key: bytes):
+        curve = ec.SECP224R1()
+        private_key = self.__derive_elliptic_curve_private_key(
+            self._private_key, curve)
+        public_key = ec.EllipticCurvePublicKey.from_encoded_point(
+            curve, eph_key)
+        shared_key = private_key.exchange(ec.ECDH(), public_key)
+        return shared_key
+
+    @staticmethod
+    def __kdf(shared_key, eph_key: bytes, counter=1):
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(shared_key)
+
+        counter_data = bytes(counter.to_bytes(4, "big"))
+        digest.update(counter_data)
+        digest.update(eph_key)
+        return digest.finalize()
+
+    @staticmethod
+    def __decrypt_payload(enc_data: bytes, symmetric_key: bytes, tag: bytes):
+        decryption_key = symmetric_key[:16]
+        iv = symmetric_key[16:]
+        cipher = Cipher(algorithms.AES(decryption_key), modes.GCM(iv, tag))
+        decryptor = cipher.decryptor()
+        return decryptor.update(enc_data) + decryptor.finalize()
+
+    @staticmethod
+    def __decode_tag(data: bytes):
+        latitude = int.from_bytes(data[0:4], "big", signed=True) / 10000000.0
+        longitude = int.from_bytes(data[4:8], "big", signed=True) / 10000000.0
+        confidence = int.from_bytes(data[8:9], "big")
+        return {"lat": latitude, "lon": longitude, "conf": confidence}
+
+    @staticmethod
+    def __generate_new_private_key():
+        curve = ec.SECP224R1()
+        return (
+            ec.generate_private_key(curve)
+            .private_numbers()
+            .private_value.to_bytes(28, "big")
+        )
+
+    def decrypt_message(self, payload):
+        data = base64.b64decode(payload)
+        timestamp = int.from_bytes(data[0:4], "big")
+        eph_key = data[len(data)-16-10-57:len(data)-16-10]
+        shared_key = self.__derive_shared_key_from_private_key_and_eph_key(
+            eph_key)
+        derived_key = self.__kdf(shared_key, eph_key)
+        enc_data = data[len(data)-16-10:len(data)-16]
+        tag = data[len(data)-16:len(data)]
+        decrypted = self.__decrypt_payload(enc_data, derived_key, tag)
+
+        ret = self.__decode_tag(decrypted)
+        ret["timestamp"] = (
+                timestamp + 978307200
+        )  # 978307200 is delta between unix and cocoa timestamps
+        return ret
 
 
-def sha256(data):
-    digest = hashlib.new("sha256")
-    digest.update(data)
-    return digest.digest()
-
-
-def decrypt(enc_data, algorithm_dkey, mode):
-    decryptor = Cipher(algorithm_dkey, mode, default_backend()).decryptor()
-    return decryptor.update(enc_data) + decryptor.finalize()
-
-
-def unpad(paddedBinary, blocksize):
-    unpadder = PKCS7(blocksize).unpadder()
-    return unpadder.update(paddedBinary) + unpadder.finalize()
-
-
-def decode_tag(data):
-    latitude = struct.unpack(">i", data[0:4])[0] / 10000000.0
-    longitude = struct.unpack(">i", data[4:8])[0] / 10000000.0
-    confidence = bytes_to_int(data[8:9])
-    status = bytes_to_int(data[9:10])
-    return {"latitude": latitude, "longitude": longitude, "confidence": confidence, "status": status}
-
-
-timestamp = bytes_to_int(data[0:4])
-priv = bytes_to_int(base64.b64decode(
-    "63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw=="))
-eph_key = ec.EllipticCurvePublicKey.from_encoded_point(
-    ec.SECP224R1(), data[5:62])
-shared_key = ec.derive_private_key(priv, ec.SECP224R1(), default_backend()).exchange(
-    ec.ECDH(), eph_key
-)
-symmetric_key = sha256(shared_key + b"\x00\x00\x00\x01" + data[5:62])
-decryption_key = symmetric_key[:16]
-iv = symmetric_key[16:]
-enc_data = data[62:72]
-tag = data[72:]
-
-decrypted = decrypt(enc_data, algorithms.AES(
-    decryption_key), modes.GCM(iv, tag))
-res = decode_tag(decrypted)
-
-print(res)
+tag = FindMyTagCrypto("63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw==")
+decrypt = tag.decrypt_message(sys.argv[1])
+print(decrypt)
