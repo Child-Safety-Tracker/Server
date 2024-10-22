@@ -1,8 +1,6 @@
 root = "."
-testdata_dir = "testdata"
-tmp_dir = "tmp"
 
-[build]
+[run]
   args_bin = []
   bin = ""
   cmd = "go run server.go"

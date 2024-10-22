@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
@@ -13,6 +14,12 @@ import (
 )
 
 func main() {
+	// Load environment variables from .env file
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal().Err(err).Msg("[Server ]Error loading .env file")
+	}
+
 	// Init Echo instance
 	echoInstance := echo.New()
 
@@ -35,7 +42,7 @@ func main() {
 	}))
 
 	// Connect to the database
-	database.DatabaseConnect("postgresql://kiet:kietvo17112003@localhost/SafetyTracker")
+	_ = database.DatabaseConnect(os.Getenv("DATABASE_URL"))
 
 	// Routes
 	echoInstance.GET("/", hello)
