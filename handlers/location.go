@@ -3,14 +3,16 @@ package handlers
 import (
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"os"
 	"server/location"
 	"server/location/decrypt"
 	"server/location/models"
 )
 
-var URL string = "http://104.214.184.97:6176"
-
 func GetLocations(echoContext echo.Context) error {
+	// Get URL from environment variables
+	var URL string = os.Getenv("APPLE_SERVER_WRAPPER_URL")
+
 	var fetchedLocationResult models.PostResponseBody
 	var decryptedLocationResultValue models.DecryptedLocationResult
 	var requestBody models.PostRequestBody

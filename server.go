@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -42,7 +43,8 @@ func main() {
 	}))
 
 	// Connect to the database
-	_ = database.DatabaseConnect(os.Getenv("DATABASE_URL"))
+	db := database.DatabaseConnect()
+	database.GetUserInfo(db, "abcd")
 
 	// Routes
 	echoInstance.GET("/", hello)
@@ -50,6 +52,9 @@ func main() {
 
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
+
+	// Deference
+	defer db.Close(context.Background())
 }
 
 func hello(echoContext echo.Context) error {
