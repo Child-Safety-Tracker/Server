@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
+	"server/database"
 	"server/handlers"
 	"time"
 )
@@ -32,6 +33,9 @@ func main() {
 			return nil
 		},
 	}))
+
+	// Connect to the database
+	database.DatabaseConnect("postgresql://kiet:kietvo17112003@localhost/SafetyTracker")
 
 	// Routes
 	echoInstance.GET("/", hello)
