@@ -5,3 +5,9 @@ type User struct {
 	Username   string
 	DeviceNums int
 }
+
+type Device struct {
+	DeviceID   string
+	UserID     string
+	PrivateKey string
+}

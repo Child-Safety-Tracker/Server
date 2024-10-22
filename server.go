@@ -44,7 +44,6 @@ func main() {
 
 	// Connect to the database
 	db := database.DatabaseConnect()
-	database.GetUserInfo(db, "abcd")
 
 	// Routes
 	echoInstance.GET("/", hello)
