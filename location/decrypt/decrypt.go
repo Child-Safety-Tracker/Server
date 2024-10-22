@@ -7,12 +7,12 @@ import (
 	"server/location/models"
 )
 
-func DecryptLocation(locationResultValue models.LocationResult) (models.DecryptedLocationResult, error) {
+func DecryptLocation(locationResultValue models.LocationResult, privateKey string) (models.DecryptedLocationResult, error) {
 
 	// Exec the decryption script on the payload
-	decodeOutput, err := exec.Command("bash", "-c", "python3 location/decrypt/decrypt.py "+locationResultValue.Payload).Output()
+	decodeOutput, err := exec.Command("bash", "-c", "python3 location/decrypt/decrypt.py "+privateKey+" "+locationResultValue.Payload).Output()
 	if err != nil {
-		log.Fatal().Err(err).Msg("[Location] Failed to decrypt payload")
+		log.Err(err).Msg("[Location] Failed to decrypt payload")
 		return models.DecryptedLocationResult{}, err
 	}
 

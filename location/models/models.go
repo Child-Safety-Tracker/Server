@@ -2,8 +2,9 @@ package models
 
 // PostRequestBody - Structure of the POST request body
 type PostRequestBody struct {
-	Ids  []string `json:"ids"`
-	Days int      `json:"days"`
+	PrivateKey string   `json:"privateKey"`
+	Ids        []string `json:"ids"`
+	Days       int      `json:"days"`
 }
 
 // LocationResult - Structure of each location result

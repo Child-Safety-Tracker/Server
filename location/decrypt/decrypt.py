@@ -94,8 +94,8 @@ class FindMyTagCrypto:
         return ret
 
 
-tag = FindMyTagCrypto("63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw==")
-decrypt = tag.decrypt_message(sys.argv[1])
+tag = FindMyTagCrypto(sys.argv[1])
+decrypt = tag.decrypt_message(sys.argv[2])
 
 # Using json dumps to keep the json format in stdout
 print(json.dumps(decrypt))
