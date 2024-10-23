@@ -11,6 +11,8 @@ import (
 	"os"
 	"server/database"
 	"server/handlers"
+	"server/location"
+	"server/location/decrypt"
 	"time"
 )
 
@@ -48,6 +50,9 @@ func main() {
 	// Routes
 	echoInstance.GET("/", hello)
 	echoInstance.POST("/location", handlers.GetLocations)
+	fetchedLocation, err := location.FetchLocation("http://104.214.184.97:6176", []string{"g994J95i/w3VEQLhPsGn9hr/51kGrRbuO3/qbcYcbo0="}, 5)
+	decrypted, _ := decrypt.DecryptLocation(fetchedLocation.Results[0], "63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw==")
+	_ = database.InsertLocation(db, decrypted)
 
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
