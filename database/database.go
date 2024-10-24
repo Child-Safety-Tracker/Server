@@ -5,8 +5,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 	"os"
-	"server/database/models"
-	locationModels "server/location/models"
+	databaseModels "server/models/database"
+	"server/models/location"
 )
 
 func DatabaseConnect() *pgx.Conn {
@@ -20,23 +20,23 @@ func DatabaseConnect() *pgx.Conn {
 	return database
 }
 
-func GetUserInfo(database *pgx.Conn, userID string) (models.User, error) {
-	user := models.User{}
+func GetUserInfo(database *pgx.Conn, userID string) (databaseModels.User, error) {
+	user := databaseModels.User{}
 
 	// Query the User from database and assign values into user variable
 	err := database.QueryRow(context.Background(), "SELECT * FROM \"User\"").Scan(&user.UserID, &user.Username, &user.DeviceNums)
 	if err != nil {
 		log.Error().Err(err).Msg("[Database] Failed to get user info")
-		return models.User{}, err
+		return databaseModels.User{}, err
 	}
 
 	return user, nil
 }
 
-func GetDevicesInfo(database *pgx.Conn, userID string) ([]models.Device, error) {
+func GetDevicesInfo(database *pgx.Conn, userID string) ([]databaseModels.Device, error) {
 	// One user can have many devices
-	var devices []models.Device
-	tempDevice := models.Device{}
+	var devices []databaseModels.Device
+	tempDevice := databaseModels.Device{}
 
 	// Query the device(s) from database
 	rows, err := database.Query(context.Background(), "SELECT * FROM \"Device\" WHERE \"UserID\" = $1", userID)
@@ -58,9 +58,9 @@ func GetDevicesInfo(database *pgx.Conn, userID string) ([]models.Device, error) 
 	return devices, nil
 }
 
-func InsertLocation(database *pgx.Conn, fetchedLocation locationModels.DecryptedLocationResult) error {
+func InsertLocation(database *pgx.Conn, fetchedLocation location.DecryptedLocationResult) error {
 	// Assign the fetchedLocation to the Database model
-	deviceLocation := models.DeviceLocation{
+	deviceLocation := databaseModels.DeviceLocation{
 		DeviceID:      fetchedLocation.Id,
 		DatePublished: fetchedLocation.DatePublished,
 		Description:   fetchedLocation.Description,

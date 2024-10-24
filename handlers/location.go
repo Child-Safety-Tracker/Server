@@ -6,16 +6,18 @@ import (
 	"os"
 	"server/location"
 	"server/location/decrypt"
-	"server/location/models"
+	locationModels "server/models/location"
+	"server/models/request"
+	"server/models/response"
 )
 
 func GetLocations(echoContext echo.Context) error {
 	// Get URL from environment variables
 	var URL string = os.Getenv("APPLE_SERVER_WRAPPER_URL")
 
-	var fetchedLocationResult models.PostResponseBody
-	var decryptedLocationResultValue models.DecryptedLocationResult
-	var requestBody models.PostRequestBody
+	var fetchedLocationResult response.LocationResponse
+	var decryptedLocationResultValue locationModels.DecryptedLocationResult
+	var requestBody request.LocationRequest
 
 	// Bind the request body
 	err := echoContext.Bind(&requestBody)
@@ -33,7 +35,7 @@ func GetLocations(echoContext echo.Context) error {
 	}
 
 	if len(fetchedLocationResult.Results) == 0 {
-		return echoContext.JSON(http.StatusOK, models.PostResponseBody{Results: []models.LocationResult{}, StatusCode: "200"})
+		return echoContext.JSON(http.StatusOK, response.LocationResponse{Results: []locationModels.LocationResult{}, StatusCode: "200"})
 	} else {
 		// Decrypt the newest fetched location
 		decryptedLocationResultValue, err = decrypt.DecryptLocation(fetchedLocationResult.Results[0], requestBody.PrivateKey)
