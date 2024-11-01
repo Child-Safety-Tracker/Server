@@ -50,8 +50,8 @@ func main() {
 	// Routes
 	echoInstance.GET("/", hello)
 	echoInstance.POST("/location", handlers.GetLocations)
-	fetchedLocation, err := location.FetchLocation("http://104.214.184.97:6176", []string{"g994J95i/w3VEQLhPsGn9hr/51kGrRbuO3/qbcYcbo0="}, 5)
-	decrypted, _ := decrypt.DecryptLocation(fetchedLocation.Results[0], "63wf6z/O7aasxWSD64I48IK/wROwBSDxeUjiJw==")
+	fetchedLocation, err := location.FetchLocation(os.Getenv("APPLE_SERVER_WRAPPER_URL"), []string{"afirx1LlNk5vh7BnbGukU+L8o9E3pHhd/uogNOdmdv8="}, 5)
+	decrypted, _ := decrypt.DecryptLocation(fetchedLocation.Results[0], "hUotVQIdoniIfacuUNHahmnNK98GRV6+kn+sOQ==")
 	_ = database.InsertLocation(db, decrypted)
 
 	// Start the server and logging result
