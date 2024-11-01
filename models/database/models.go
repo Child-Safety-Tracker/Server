@@ -1,9 +1,9 @@
 package database
 
 type User struct {
-	UserID     string
-	Username   string
-	DeviceNums int
+	UserID     string `json:"userId"`
+	UserName   string `json:"userName"`
+	DeviceNums int    `json:"deviceNums"`
 }
 
 type Device struct {

@@ -11,8 +11,6 @@ import (
 	"os"
 	"server/database"
 	"server/handlers"
-	"server/location"
-	"server/location/decrypt"
 	"time"
 )
 
@@ -47,12 +45,15 @@ func main() {
 	// Connect to the database
 	db := database.DatabaseConnect()
 
-	// Routes
+	// -- Routes --
 	echoInstance.GET("/", hello)
+	// Location
 	echoInstance.POST("/location", handlers.GetLocations)
-	fetchedLocation, err := location.FetchLocation(os.Getenv("APPLE_SERVER_WRAPPER_URL"), []string{"afirx1LlNk5vh7BnbGukU+L8o9E3pHhd/uogNOdmdv8="}, 5)
-	decrypted, _ := decrypt.DecryptLocation(fetchedLocation.Results[0], "hUotVQIdoniIfacuUNHahmnNK98GRV6+kn+sOQ==")
-	_ = database.InsertLocation(db, decrypted)
+	// User
+	// Using anonymous function to pass more arguments into handler function
+	echoInstance.GET("/user", func(echoContext echo.Context) error {
+		return handlers.GetUser(echoContext, db)
+	})
 
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")

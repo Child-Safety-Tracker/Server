@@ -24,9 +24,8 @@ func GetUserInfo(database *pgx.Conn, userID string) (databaseModels.User, error)
 	user := databaseModels.User{}
 
 	// Query the User from database and assign values into user variable
-	err := database.QueryRow(context.Background(), "SELECT * FROM \"User\"").Scan(&user.UserID, &user.Username, &user.DeviceNums)
+	err := database.QueryRow(context.Background(), "SELECT * FROM \"User\" WHERE \"UserID\"=$1", userID).Scan(&user.UserID, &user.UserName, &user.DeviceNums)
 	if err != nil {
-		log.Error().Err(err).Msg("[Database] Failed to get user info")
 		return databaseModels.User{}, err
 	}
 

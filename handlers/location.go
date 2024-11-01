@@ -13,9 +13,9 @@ import (
 
 func GetLocations(echoContext echo.Context) error {
 	// Get URL from environment variables
-	var URL string = os.Getenv("APPLE_SERVER_WRAPPER_URL")
+	URL := os.Getenv("APPLE_SERVER_WRAPPER_URL")
 
-	var fetchedLocationResult response.LocationResponse
+	fetchedLocationResult := response.LocationResponse{}
 	var decryptedLocationResultValue locationModels.DecryptedLocationResult
 	var requestBody request.LocationRequest
 
