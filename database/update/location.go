@@ -59,9 +59,19 @@ func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
 		return err
 	}
 
+	// Fetch the latest location timestamp from the database
+	var lastUpdateTimestamp int
+	err = database.QueryRow(context.Background(), "SELECT max(\"DatePublished\") FROM \"DeviceLocation\";").Scan(&lastUpdateTimestamp)
+
+	if err != nil {
+		log.Err(err).Msg("[Database] Failed to fetch the latest location timestamp")
+		return err
+	}
+
 	// The query string to insert the data into the database
 	queryString := "INSERT INTO \"DeviceLocation\" (\"DeviceID\", \"DatePublished\", \"Description\", \"StatusCode\", \"Payload\") VALUES "
 
+	// Add the value to be inserted
 	for i := 0; i < len(response.Results); i++ {
 		queryString += "('" + response.Results[i].Id + "', " + fmt.Sprintf("%d", response.Results[i].DatePublished) + ", '" + response.Results[i].Description + "', " + fmt.Sprintf("%d", response.Results[i].StatusCode) + ", '" + response.Results[i].Payload + "')"
 
@@ -71,15 +81,13 @@ func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
 		}
 	}
 
-	fmt.Println(queryString)
+	// Execute the insert command
 	_, err = database.Exec(context.Background(), queryString)
 
 	if err != nil {
 		log.Err(err).Msg("[Database] Error executing the update location query command")
 		return err
 	}
-
-	fmt.Printf("%+v\\n", response)
 
 	return nil
 }
