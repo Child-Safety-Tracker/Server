@@ -73,11 +73,17 @@ func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
 
 	// Add the value to be inserted
 	for i := 0; i < len(response.Results); i++ {
-		queryString += "('" + response.Results[i].Id + "', " + fmt.Sprintf("%d", response.Results[i].DatePublished) + ", '" + response.Results[i].Description + "', " + fmt.Sprintf("%d", response.Results[i].StatusCode) + ", '" + response.Results[i].Payload + "')"
+		// Only update the location when there is new value available
+		if response.Results[i].DatePublished > lastUpdateTimestamp {
+			queryString += "('" + response.Results[i].Id + "', " + fmt.Sprintf("%d", response.Results[i].DatePublished) + ", '" + response.Results[i].Description + "', " + fmt.Sprintf("%d", response.Results[i].StatusCode) + ", '" + response.Results[i].Payload + "')"
 
-		// Add a comma to separate each insert data
-		if i != len(response.Results)-1 {
-			queryString += ","
+			// Add a comma to separate each insert data
+			if i != len(response.Results)-1 {
+				queryString += ","
+			}
+		} else {
+			// No update when there is no new location
+			queryString = ""
 		}
 	}
 
