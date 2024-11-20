@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"server/database"
+	"server/database/update"
 	"server/handlers"
 	"time"
 )
@@ -55,6 +57,8 @@ func main() {
 		return handlers.GetUser(echoContext, db)
 	})
 
+	response, err := update.AppleServerLocations(os.Getenv("APPLE_SERVER_WRAPPER_URL"), []string{"afirx1LlNk5vh7BnbGukU+L8o9E3pHhd/uogNOdmdv8="}, 7)
+	fmt.Printf("%+v\\n", response)
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
 
