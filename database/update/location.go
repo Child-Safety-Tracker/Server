@@ -51,6 +51,7 @@ func AppleServerLocations(URL string, id []string, days int) (responseModels.Loc
 }
 
 func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
+	newLocationNums := 0 // Indicate the number of new locations
 	// Fetch the locations from Apple server
 	response, err := AppleServerLocations(os.Getenv("APPLE_SERVER_WRAPPER_URL"), ids, 7)
 
@@ -75,16 +76,24 @@ func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
 	for i := 0; i < len(response.Results); i++ {
 		// Only update the location when there is new value available
 		if response.Results[i].DatePublished > lastUpdateTimestamp {
+			newLocationNums += 1
 			queryString += "('" + response.Results[i].Id + "', " + fmt.Sprintf("%d", response.Results[i].DatePublished) + ", '" + response.Results[i].Description + "', " + fmt.Sprintf("%d", response.Results[i].StatusCode) + ", '" + response.Results[i].Payload + "')"
 
 			// Add a comma to separate each insert data
 			if i != len(response.Results)-1 {
 				queryString += ","
 			}
-		} else {
-			// No update when there is no new location
-			queryString = ""
 		}
+		// Trim the last trailing comma
+		if newLocationNums != 0 {
+			queryString = queryString[:len(queryString)-1]
+		}
+	}
+
+	if newLocationNums == 0 {
+		// No update when there is no new location
+		queryString = ""
+		log.Warn().Msg("[Database] No new location to be updated")
 	}
 
 	// Execute the insert command
@@ -95,5 +104,6 @@ func DatabaseUpdateLocation(database *pgx.Conn, ids []string) error {
 		return err
 	}
 
+	log.Info().Msg("[Database] Successfully updated the location")
 	return nil
 }
