@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"net/http"
-	"server/database"
+	"server/database/user"
 )
 
 func GetUser(echoContext echo.Context, db *pgx.Conn) error {
@@ -14,12 +14,13 @@ func GetUser(echoContext echo.Context, db *pgx.Conn) error {
 	userID := echoContext.QueryParam("userId")
 
 	// Query the user information and put them into the user object
-	result, err := database.GetUserInfo(db, userID)
+	result, err := user.GetUserInfo(db, userID)
 
 	// Error response
 	if err != nil {
-		log.Err(err).Msg("[User]")
-		err = fmt.Errorf("[User] Failed query user from the database")
+		msg := "[User] Failed query user from the database"
+		log.Err(err).Msg(msg)
+		err = fmt.Errorf(msg)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

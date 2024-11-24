@@ -20,18 +20,6 @@ func DatabaseConnect() *pgx.Conn {
 	return database
 }
 
-func GetUserInfo(database *pgx.Conn, userID string) (databaseModels.User, error) {
-	user := databaseModels.User{}
-
-	// Query the User from database and assign values into user variable
-	err := database.QueryRow(context.Background(), "SELECT * FROM \"User\" WHERE \"UserID\"=$1", userID).Scan(&user.UserID, &user.UserName, &user.DeviceNums)
-	if err != nil {
-		return databaseModels.User{}, err
-	}
-
-	return user, nil
-}
-
 func GetDevicesInfo(database *pgx.Conn, userID string) ([]databaseModels.Device, error) {
 	// One user can have many devices
 	var devices []databaseModels.Device
