@@ -47,12 +47,19 @@ func main() {
 
 	// -- Routes --
 	echoInstance.GET("/", hello)
+
 	// Location
 	echoInstance.POST("/location", handlers.GetLocations)
+
 	// User
 	// Using anonymous function to pass more arguments into handler function
 	echoInstance.GET("/user", func(echoContext echo.Context) error {
 		return handlers.GetUser(echoContext, db)
+	})
+
+	// Device
+	echoInstance.GET("/device", func(echoContext echo.Context) error {
+		return handlers.GetDevice(echoContext, db)
 	})
 
 	// Start the server and logging result
