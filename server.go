@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"server/database"
-	"server/database/update"
 	"server/handlers"
 	"time"
 )
@@ -55,8 +54,6 @@ func main() {
 	echoInstance.GET("/user", func(echoContext echo.Context) error {
 		return handlers.GetUser(echoContext, db)
 	})
-
-	update.DatabaseUpdateLocation(db, []string{"afirx1LlNk5vh7BnbGukU+L8o9E3pHhd/uogNOdmdv8="})
 
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
