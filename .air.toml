@@ -1,8 +1,8 @@
 root = "."
 
-[run]
-  args_bin = []
-  cmd = "go run server.go"
+[build]
+  cmd = "go build -o ./tmp/server server.go"
+  bin = "tmp/server"
   delay = 1000
   exclude_unchanged = false
   follow_symlink = false
