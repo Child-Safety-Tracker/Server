@@ -1,57 +1,20 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"io"
-	"net/http"
 	"os"
 	"server/database"
-	"server/models/request"
-	responseModels "server/models/response"
+	"server/database/device"
+	"server/database/location"
+	"server/models/response"
 	"time"
 )
 
-func AppleServerLocations(URL string, id []string, days int) (responseModels.LocationResponse, error) {
-	// Encode the request body
-	postBody, err := json.Marshal(&request.LocationRequest{Ids: id, Days: days})
-	if err != nil {
-		log.Err(err).Msg("[Location] Error encode the request body")
-		return responseModels.LocationResponse{}, err
-	}
-
-	// Fire the POST request
-	response, err := http.Post(URL, "application/json", bytes.NewBuffer(postBody))
-	if err != nil {
-		log.Err(err).Msg("[Location] Error sending POST request to the Apple Server")
-		return responseModels.LocationResponse{}, err
-	}
-
-	// Close the response Body when done reading
-	defer response.Body.Close()
-
-	// Read the response body
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Err(err).Msg("[Location] Error reading the response body")
-		return responseModels.LocationResponse{}, err
-	}
-
-	// Unmarshall the json response body
-	postResponseBodyValue := responseModels.LocationResponse{}
-	err = json.Unmarshal(responseBody, &postResponseBodyValue)
-	if err != nil {
-		log.Err(err).Msg("[Location] Error unmarshalling the response body")
-		return responseModels.LocationResponse{}, err
-	}
-
-	return postResponseBodyValue, nil
-}
-
 func main() {
+	var deviceIds []string
+	var fetchedLocations response.LocationResponse
 
 	// Load environment variables from .env file
 	err := godotenv.Load(".env")
@@ -66,5 +29,29 @@ func main() {
 	log.Logger = logger
 
 	// Connect to the database
-	_ = database.DatabaseConnect()
+	db := database.DatabaseConnect()
+
+	// Get all available devices
+	devices, err := device.GetDevicesInfo(db, "")
+	if err != nil {
+		log.Error().Msg("[Device] Error getting device info")
+	}
+
+	// Copy the device ids into another array
+	for _, device := range devices {
+		deviceIds = append(deviceIds, device.DeviceID)
+	}
+
+	// Fetch location from Apple server
+	fetchedLocations, err = location.AppleServerLocations(deviceIds, 7)
+	if err != nil {
+		log.Error().Msg("[Location] Error fetching location from Apple server")
+	}
+
+	// Insert the new locations into the database
+	err = location.DatabaseInsertLocation(db, fetchedLocations)
+	if err != nil {
+		log.Error().Msg("[Database] Error insert all locations")
+	}
+
 }
