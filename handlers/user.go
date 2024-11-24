@@ -19,7 +19,7 @@ func GetUser(echoContext echo.Context, db *pgx.Conn) error {
 	// Error response
 	if err != nil {
 		msg := "[User] Failed query user from the database"
-		log.Err(err).Msg(msg)
+		log.Error().Msg(msg)
 		err = fmt.Errorf(msg)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

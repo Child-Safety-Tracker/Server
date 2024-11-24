@@ -1,49 +1,39 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 	"net/http"
-	"os"
-	"server/location"
-	"server/location/decrypt"
-	locationModels "server/models/location"
+	"server/database/location"
 	"server/models/request"
-	"server/models/response"
 )
 
 func GetLocations(echoContext echo.Context) error {
-	// Get URL from environment variables
-	URL := os.Getenv("APPLE_SERVER_WRAPPER_URL")
-
-	fetchedLocationResult := response.LocationResponse{}
-	var decryptedLocationResultValue locationModels.DecryptedLocationResult
-	var requestBody request.LocationRequest
 
 	// Bind the request body
+	var requestBody request.LocationRequest
 	err := echoContext.Bind(&requestBody)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	} else if len(requestBody.PrivateKey) == 0 || len(requestBody.Ids) == 0 || (requestBody.Days == 0) {
-		print(requestBody.Days)
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
-	}
 
-	// Fetch locations from Apple Server
-	fetchedLocationResult, err = location.FetchLocation(URL, requestBody.Ids, requestBody.Days)
 	if err != nil {
+		err = fmt.Errorf("[Server] Failed to bind the request body")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if len(fetchedLocationResult.Results) == 0 {
-		return echoContext.JSON(http.StatusOK, response.LocationResponse{Results: []locationModels.LocationResult{}, StatusCode: "200"})
-	} else {
-		// Decrypt the newest fetched location
-		decryptedLocationResultValue, err = decrypt.DecryptLocation(fetchedLocationResult.Results[0], requestBody.PrivateKey)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-		}
-
-		// Return response
-		return echoContext.JSON(http.StatusOK, decryptedLocationResultValue)
+	// Bad request
+	if len(requestBody.PrivateKey) == 0 || len(requestBody.Ids) == 0 || (requestBody.Days == 0) {
+		msg := "[Location] Invalid request body"
+		log.Error().Msg(msg)
+		return echo.NewHTTPError(http.StatusBadRequest, msg)
 	}
+
+	returnLocation, err := location.FetchLocation(requestBody.Ids, requestBody.PrivateKey)
+
+	if err != nil {
+		msg := "[Location] Failed to fetch and decrypt location"
+		log.Error().Msg(msg)
+		return echo.NewHTTPError(http.StatusInternalServerError, msg)
+	}
+
+	return echoContext.JSON(http.StatusOK, returnLocation)
 }

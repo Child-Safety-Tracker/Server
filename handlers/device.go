@@ -18,7 +18,7 @@ func GetDevice(echoContext echo.Context, db *pgx.Conn) error {
 
 	if err != nil {
 		msg := "[Device] Failed query device information from the database"
-		log.Err(err).Msg(msg)
+		log.Error().Msg(msg)
 		err = fmt.Errorf(msg)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
