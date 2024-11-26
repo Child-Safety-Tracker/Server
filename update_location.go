@@ -17,10 +17,14 @@ func main() {
 	var fetchedLocations response.LocationResponse
 
 	// Load environment variables from .env file
-	err := godotenv.Load(".env")
+	rootPath, err := os.Getwd()
 	if err != nil {
-		log.Fatal().Err(err).Msg("[Server] Error loading .env file")
-		return
+		log.Fatal().Err(err).Msg("Failed to get project directory")
+	}
+
+	err = godotenv.Load(rootPath + "/.env")
+	if err != nil {
+		log.Fatal().Err(err).Msg("[Server ]Error loading .env file")
 	}
 
 	// Logger init with pretty format and timestamp enabled

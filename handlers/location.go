@@ -21,7 +21,7 @@ func GetLocations(echoContext echo.Context) error {
 	}
 
 	// Bad request
-	if len(requestBody.PrivateKey) == 0 || len(requestBody.Ids) == 0 || (requestBody.Days == 0) {
+	if len(requestBody.PrivateKey) == 0 || len(requestBody.Ids) == 0 {
 		msg := "[Location] Invalid request body"
 		log.Error().Msg(msg)
 		return echo.NewHTTPError(http.StatusBadRequest, msg)

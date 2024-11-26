@@ -2,6 +2,7 @@ package location
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -11,6 +12,7 @@ import (
 	locationModels "server/models/location"
 	"server/models/request"
 	responseModels "server/models/response"
+	"slices"
 )
 
 func AppleServerLocations(id []string, days int) (responseModels.LocationResponse, error) {
@@ -56,7 +58,7 @@ func AppleServerLocations(id []string, days int) (responseModels.LocationRespons
 func FetchLocation(ids []string, privateKey string) (locationModels.DecryptedLocationResult, error) {
 	decryptedLocationResultValue := locationModels.DecryptedLocationResult{}
 
-	fetchedLocations, err := AppleServerLocations(ids, 7)
+	fetchedLocations, err := AppleServerLocations(ids, 1)
 
 	if err != nil {
 		log.Error().Msg("[Location] Error fetching location from Apple server")
@@ -69,7 +71,13 @@ func FetchLocation(ids []string, privateKey string) (locationModels.DecryptedLoc
 		return locationModels.DecryptedLocationResult{}, err
 	}
 
-	decryptedLocationResultValue, err = decrypt.DecryptLocation(fetchedLocations.Results[0], privateKey)
+	// Get the latest location from returned results
+	latestLocation := slices.MaxFunc(fetchedLocations.Results, func(i, j locationModels.LocationResult) int {
+		return cmp.Compare(i.DatePublished, j.DatePublished)
+	})
+
+	// Decrypt it
+	decryptedLocationResultValue, err = decrypt.DecryptLocation(latestLocation, privateKey)
 
 	if err != nil {
 		log.Error().Msg("[Location] Error decrypting the location payload")
