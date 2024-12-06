@@ -7,9 +7,9 @@ type User struct {
 }
 
 type Device struct {
-	DeviceID   string
-	UserID     string
-	PrivateKey string
+	DeviceID   string `json:"deviceId"`
+	UserID     string `json:"userId"`
+	PrivateKey string `json:"privateKey"`
 }
 
 type DeviceLocation struct {
