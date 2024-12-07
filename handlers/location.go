@@ -21,13 +21,13 @@ func GetLocations(echoContext echo.Context) error {
 	}
 
 	// Bad request
-	if len(requestBody.PrivateKey) == 0 || len(requestBody.Ids) == 0 {
+	if len(requestBody.PrivateKeys) == 0 || len(requestBody.Ids) == 0 {
 		msg := "[Location] Invalid request body"
 		log.Error().Msg(msg)
 		return echo.NewHTTPError(http.StatusBadRequest, msg)
 	}
 
-	returnLocation, err := location.FetchLocation(requestBody.Ids, requestBody.PrivateKey)
+	returnLocation, err := location.FetchLocation(requestBody.Ids, requestBody.PrivateKeys)
 
 	if err != nil {
 		msg := "[Location] Failed to fetch and decrypt location"

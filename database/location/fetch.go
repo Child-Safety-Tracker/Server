@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"encoding/json"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
@@ -13,15 +14,16 @@ import (
 	"server/models/request"
 	responseModels "server/models/response"
 	"slices"
+	"strconv"
 )
 
-func AppleServerLocations(id []string, days int) (responseModels.LocationResponse, error) {
+func AppleServerLocations(ids []string, days int) (responseModels.LocationResponse, error) {
 
 	// Apple server wrapper URL
 	URL := os.Getenv("APPLE_SERVER_WRAPPER_URL")
 
 	// Encode the request body
-	postBody, err := json.Marshal(&request.LocationRequest{Ids: id, Days: days})
+	postBody, err := json.Marshal(&request.LocationRequest{Ids: ids, Days: days})
 	if err != nil {
 		log.Err(err).Msg("[Location] Error encode the request body")
 		return responseModels.LocationResponse{}, err
@@ -55,33 +57,58 @@ func AppleServerLocations(id []string, days int) (responseModels.LocationRespons
 	return postResponseBodyValue, nil
 }
 
-func FetchLocation(ids []string, privateKey string) (locationModels.DecryptedLocationResult, error) {
-	decryptedLocationResultValue := locationModels.DecryptedLocationResult{}
+func FetchLocation(ids []string, privateKeys []string) ([]locationModels.DecryptedLocationResult, error) {
+	var decryptedLocationResultValue []locationModels.DecryptedLocationResult
 
 	fetchedLocations, err := AppleServerLocations(ids, 1)
 
 	if err != nil {
 		log.Error().Msg("[Location] Error fetching location from Apple server")
-		return locationModels.DecryptedLocationResult{}, err
+		return []locationModels.DecryptedLocationResult{}, err
 	}
 
 	// There is no location published
 	if len(fetchedLocations.Results) == 0 {
 		log.Warn().Msg("[Location] Empty fetched location")
-		return locationModels.DecryptedLocationResult{}, err
+		return []locationModels.DecryptedLocationResult{}, err
 	}
 
-	// Get the latest location from returned results
-	latestLocation := slices.MaxFunc(fetchedLocations.Results, func(i, j locationModels.LocationResult) int {
-		return cmp.Compare(i.DatePublished, j.DatePublished)
-	})
+	// Split results by device
+	// 5 indicates the maximum devices
+	var splitLocations [5][]locationModels.LocationResult
+	for _, element := range fetchedLocations.Results {
+		for idIndex, id := range ids {
+			if element.Id == id {
+				splitLocations[idIndex] = append(splitLocations[idIndex], element)
+			}
+		}
+	}
+
+	// Get the latest location from split results
+	var latestLocations [5]locationModels.LocationResult
+	for index, elements := range splitLocations {
+		if len(splitLocations[index]) > 1 {
+			latestLocations[index] = slices.MaxFunc(elements, func(i, j locationModels.LocationResult) int {
+				return cmp.Compare(i.DatePublished, j.DatePublished)
+			})
+		} else if len(splitLocations[index]) == 1 {
+			latestLocations[index] = elements[0]
+		}
+	}
 
 	// Decrypt it
-	decryptedLocationResultValue, err = decrypt.DecryptLocation(latestLocation, privateKey)
+	for index, element := range latestLocations {
+		// temporary variable to handle error
+		if element != (locationModels.LocationResult{}) {
+			fmt.Printf("%+v\n", element)
+			tempDecryptedLocation, err := decrypt.DecryptLocation(element, privateKeys[index])
 
-	if err != nil {
-		log.Error().Msg("[Location] Error decrypting the location payload")
-		return locationModels.DecryptedLocationResult{}, err
+			if err != nil {
+				log.Error().Msg("[Location] Error decrypting the location payload at index: " + strconv.Itoa(index))
+			}
+
+			decryptedLocationResultValue = append(decryptedLocationResultValue, tempDecryptedLocation)
+		}
 	}
 
 	return decryptedLocationResultValue, nil
