@@ -10,6 +10,7 @@ type Device struct {
 	DeviceID   string `json:"deviceId"`
 	UserID     string `json:"userId"`
 	PrivateKey string `json:"privateKey"`
+	Enabled    bool   `json:"enabled"`
 }
 
 type DeviceLocation struct {

@@ -34,7 +34,7 @@ func GetDevicesInfo(database *pgx.Conn, userID string) ([]databaseModels.Device,
 
 	// Assign the returned database query value to the array of Device
 	for queriedRows.Next() {
-		err := queriedRows.Scan(&tempDevice.DeviceID, &tempDevice.UserID, &tempDevice.PrivateKey)
+		err := queriedRows.Scan(&tempDevice.DeviceID, &tempDevice.UserID, &tempDevice.PrivateKey, &tempDevice.Enabled)
 		if err != nil {
 			log.Err(err).Msg("[Database] Failed to scan device values.")
 			return devices, err
