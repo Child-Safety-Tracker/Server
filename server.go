@@ -67,6 +67,9 @@ func main() {
 	echoInstance.GET("/device", func(echoContext echo.Context) error {
 		return handlers.GetDevice(echoContext, db)
 	})
+	echoInstance.POST("/device", func(echoContext echo.Context) error {
+		return handlers.SetDeviceStatus(echoContext, db)
+	})
 
 	// Start the server and logging result
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")

@@ -6,3 +6,8 @@ type LocationRequest struct {
 	Ids         []string `json:"ids"`
 	Days        int      `json:"days"`
 }
+
+type DeviceStatusEditRequest struct {
+	DeviceId string `json:"deviceId"`
+	Enabled  bool   `json:"enabled"`
+}
