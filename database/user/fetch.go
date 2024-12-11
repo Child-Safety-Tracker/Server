@@ -2,11 +2,11 @@ package user
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	databaseModels "server/models/database"
 )
 
-func GetUserInfo(database *pgx.Conn, userID string) (databaseModels.User, error) {
+func GetUserInfo(database *pgxpool.Pool, userID string) (databaseModels.User, error) {
 	user := databaseModels.User{}
 
 	// Query the User from database and assign values into user variable

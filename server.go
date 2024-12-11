@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -75,7 +74,7 @@ func main() {
 	logger.Fatal().Err(echoInstance.Start(":1234")).Msg("[Server] Failed to start the server.")
 
 	// Deference
-	defer db.Close(context.Background())
+	defer db.Close()
 }
 
 func hello(echoContext echo.Context) error {

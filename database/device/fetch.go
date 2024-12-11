@@ -3,11 +3,12 @@ package device
 import (
 	"context"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	databaseModels "server/models/database"
 )
 
-func GetDevicesInfo(database *pgx.Conn, userID string) ([]databaseModels.Device, error) {
+func GetDevicesInfo(database *pgxpool.Pool, userID string) ([]databaseModels.Device, error) {
 	// One user can have many devices
 	var devices []databaseModels.Device
 	var queriedRows pgx.Rows

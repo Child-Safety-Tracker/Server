@@ -3,12 +3,12 @@ package location
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"server/models/response"
 )
 
-func DatabaseInsertLocation(database *pgx.Conn, fetchedLocations response.LocationResponse) error {
+func DatabaseInsertLocation(database *pgxpool.Pool, fetchedLocations response.LocationResponse) error {
 	newLocationNums := 0 // Indicate the number of new locations
 
 	// Fetch the latest location timestamp from the database

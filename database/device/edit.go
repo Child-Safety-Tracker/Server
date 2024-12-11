@@ -2,11 +2,11 @@ package device
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
-func DatabaseSetDeviceStatus(database *pgx.Conn, deviceId string, status bool) error {
+func DatabaseSetDeviceStatus(database *pgxpool.Pool, deviceId string, status bool) error {
 
 	// Convert to string for database query
 	var convertedStatus string

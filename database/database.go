@@ -2,15 +2,15 @@ package database
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"os"
 	databaseModels "server/models/database"
 	"server/models/location"
 )
 
-func DatabaseConnect() *pgx.Conn {
-	database, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+func DatabaseConnect() *pgxpool.Pool {
+	database, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal().Err(err).Msg("[Database] Failed to connect")
 	} else {
@@ -20,7 +20,7 @@ func DatabaseConnect() *pgx.Conn {
 	return database
 }
 
-func InsertLocation(database *pgx.Conn, fetchedLocation location.DecryptedLocationResult) error {
+func InsertLocation(database *pgxpool.Pool, fetchedLocation location.DecryptedLocationResult) error {
 	// Assign the fetchedLocation to the Database model
 	deviceLocation := databaseModels.DeviceLocation{
 		DeviceID:      fetchedLocation.Id,

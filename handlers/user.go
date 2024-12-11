@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"server/database/user"
 )
 
-func GetUser(echoContext echo.Context, db *pgx.Conn) error {
+func GetUser(echoContext echo.Context, db *pgxpool.Pool) error {
 	// Query parameter
 	userID := echoContext.QueryParam("userId")
 
