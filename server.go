@@ -54,7 +54,10 @@ func main() {
 	echoInstance.GET("/", hello)
 
 	// Location
-	echoInstance.POST("/location", handlers.GetLocations)
+	echoInstance.POST("/location", func(echoContext echo.Context) error {
+		return handlers.GetLocations(echoContext, db)
+
+	})
 
 	// User
 	// Using anonymous function to pass more arguments into handler function

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"server/models/request"
 )
 
-func GetLocations(echoContext echo.Context) error {
+func GetLocations(echoContext echo.Context, database *pgxpool.Pool) error {
 
 	// Bind the request body
 	var requestBody request.LocationRequest
@@ -27,7 +28,7 @@ func GetLocations(echoContext echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, msg)
 	}
 
-	returnLocation, err := location.FetchLocation(requestBody.Ids, requestBody.PrivateKeys)
+	returnLocation, err := location.FetchLocation(database, requestBody.Ids, requestBody.PrivateKeys)
 
 	if err != nil {
 		msg := "[Location] Failed to fetch and decrypt location"

@@ -3,8 +3,10 @@ package location
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
@@ -57,7 +59,7 @@ func AppleServerLocations(ids []string, days int) (responseModels.LocationRespon
 	return postResponseBodyValue, nil
 }
 
-func FetchLocation(ids []string, privateKeys []string) ([]locationModels.DecryptedLocationResult, error) {
+func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) ([]locationModels.DecryptedLocationResult, error) {
 	var decryptedLocationResultValue []locationModels.DecryptedLocationResult
 
 	fetchedLocations, err := AppleServerLocations(ids, 1)
@@ -93,6 +95,26 @@ func FetchLocation(ids []string, privateKeys []string) ([]locationModels.Decrypt
 			})
 		} else if len(splitLocations[index]) == 1 {
 			latestLocations[index] = elements[0]
+		}
+	}
+
+	// Check if the latestLocation contains all the requested IDs
+	for index, element := range ids {
+		// If the latest location for that index is empty
+		if latestLocations[index].Id != element {
+			fmt.Println(element)
+			var queriedLocation locationModels.LocationResult
+			var locationId int
+
+			err := database.QueryRow(context.Background(), "SELECT * FROM \"DeviceLocation\" WHERE \"DatePublished\"=(SELECT MAX(\"DatePublished\") FROM \"DeviceLocation\" WHERE \"DeviceID\"=$1);", element).Scan(&locationId, &queriedLocation.Id, &queriedLocation.DatePublished, &queriedLocation.Description, &queriedLocation.StatusCode, &queriedLocation.Payload)
+
+			if err != nil {
+				log.Err(err).Msg("[Location] Error getting latest location from the database")
+				return []locationModels.DecryptedLocationResult{}, err
+			}
+
+			// Update to the latest location from the database
+			latestLocations[index] = queriedLocation
 		}
 	}
 

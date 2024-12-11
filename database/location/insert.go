@@ -38,9 +38,9 @@ func DatabaseInsertLocation(database *pgxpool.Pool, fetchedLocations response.Lo
 	}
 
 	// Trim the last trailing comma
-	if newLocationNums != 0 {
-		queryString = queryString[:len(queryString)-1]
-	}
+	//if newLocationNums != 0 {
+	//	queryString = queryString[:len(queryString)-1]
+	//}
 
 	if newLocationNums == 0 {
 		// No location when there is no new location
@@ -48,6 +48,7 @@ func DatabaseInsertLocation(database *pgxpool.Pool, fetchedLocations response.Lo
 		log.Warn().Msg("[Database] No new location to be updated")
 	}
 
+	fmt.Println(queryString)
 	// Execute the insert command
 	_, err = database.Exec(context.Background(), queryString)
 
