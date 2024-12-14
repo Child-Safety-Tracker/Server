@@ -69,8 +69,11 @@ func main() {
 	echoInstance.GET("/device", func(echoContext echo.Context) error {
 		return handlers.GetDevice(echoContext, db)
 	})
-	echoInstance.POST("/device", func(echoContext echo.Context) error {
+	echoInstance.POST("/device/status", func(echoContext echo.Context) error {
 		return handlers.SetDeviceStatus(echoContext, db)
+	})
+	echoInstance.POST("/device", func(echoContext echo.Context) error {
+		return handlers.InsertDevice(echoContext, db)
 	})
 
 	// Start the server and logging result
