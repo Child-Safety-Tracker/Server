@@ -5,7 +5,6 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -72,7 +71,7 @@ func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) (
 	// There is no location published
 	if len(fetchedLocations.Results) == 0 {
 		log.Warn().Msg("[Location] Empty fetched location")
-		return []locationModels.DecryptedLocationResult{}, err
+		//return []locationModels.DecryptedLocationResult{}, err
 	}
 
 	// Split results by device
@@ -102,7 +101,6 @@ func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) (
 	for index, element := range ids {
 		// If the latest location for that index is empty
 		if latestLocations[index].Id != element {
-			fmt.Println(element)
 			var queriedLocation locationModels.LocationResult
 			var locationId int
 
@@ -122,7 +120,6 @@ func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) (
 	for index, element := range latestLocations {
 		// temporary variable to handle error
 		if element != (locationModels.LocationResult{}) {
-			fmt.Printf("%+v\n", element)
 			tempDecryptedLocation, err := decrypt.DecryptLocation(element, privateKeys[index])
 
 			if err != nil {
