@@ -43,15 +43,5 @@ func GetDevicesInfo(database *pgxpool.Pool, userID string) ([]databaseModels.Dev
 
 		devices = append(devices, tempDevice)
 	}
-	// Assign the result to an array of Device(s)
-	for queriedRows.Next() {
-		err := queriedRows.Scan(&tempDevice.DeviceID, &tempDevice.UserID, &tempDevice.PrivateKey)
-		if err != nil {
-			log.Err(err).Msg("[Database] Failed to scan device values.")
-			return devices, err
-		}
-		devices = append(devices, tempDevice)
-	}
-
 	return devices, nil
 }

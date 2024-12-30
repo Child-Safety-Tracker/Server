@@ -14,11 +14,10 @@ type Device struct {
 }
 
 type DeviceLocation struct {
+	LocationID    string
 	DeviceID      string
 	DatePublished int
 	Description   string
 	StatusCode    int
-	Latitude      float32
-	Longitude     float32
-	Confidence    int
+	Payload       string
 }

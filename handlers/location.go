@@ -21,13 +21,20 @@ func GetLocations(echoContext echo.Context, database *pgxpool.Pool) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	// Bad request
+	// Fetch all locations
 	if len(requestBody.PrivateKeys) == 0 || len(requestBody.Ids) == 0 {
-		msg := "[Location] Invalid request body"
-		log.Error().Msg(msg)
-		return echo.NewHTTPError(http.StatusBadRequest, msg)
+		returnLocation, err := location.FetchAllLocations(database)
+
+		if err != nil {
+			msg := "[Location] Failed to fetch all locations"
+			log.Error().Msg(msg)
+			return echo.NewHTTPError(http.StatusInternalServerError, msg)
+		}
+
+		return echoContext.JSON(http.StatusOK, returnLocation)
 	}
 
+	// Fetch location based on device id
 	returnLocation, err := location.FetchLocation(database, requestBody.Ids, requestBody.PrivateKeys)
 
 	if err != nil {
