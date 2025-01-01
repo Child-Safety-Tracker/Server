@@ -37,16 +37,22 @@ func UserRegister(echoContext echo.Context) error {
 	err := echoContext.Bind(&requestBody)
 
 	if err != nil {
-		err = fmt.Errorf("[Server] Failed to bind the request body")
+		err = fmt.Errorf("[Register] Failed to bind the request body")
 		log.Err(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	if len(requestBody.Username) == 0 || len(requestBody.Password) == 0 {
-		err = fmt.Errorf("[Server] Invalid user information")
+		err = fmt.Errorf("[Register] Invalid user information")
 		log.Err(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	return echoContext.JSON(http.StatusOK, "User registered successfully")
+	if requestBody.Username == "test" {
+		err = fmt.Errorf("[Register] User already exist")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return echoContext.JSON(http.StatusOK, "[Register] User registered successfully")
 }
