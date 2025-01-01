@@ -26,3 +26,27 @@ func GetUser(echoContext echo.Context, db *pgxpool.Pool) error {
 
 	return echoContext.JSON(http.StatusOK, result)
 }
+
+type UserCredentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func UserRegister(echoContext echo.Context) error {
+	var requestBody UserCredentials
+	err := echoContext.Bind(&requestBody)
+
+	if err != nil {
+		err = fmt.Errorf("[Server] Failed to bind the request body")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(requestBody.Username) == 0 || len(requestBody.Password) == 0 {
+		err = fmt.Errorf("[Server] Invalid user information")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return echoContext.JSON(http.StatusOK, "User registered successfully")
+}
