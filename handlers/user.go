@@ -56,3 +56,46 @@ func UserRegister(echoContext echo.Context) error {
 
 	return echoContext.JSON(http.StatusOK, "[Register] User registered successfully")
 }
+
+type UserInformation struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	Active   bool   `json:"active"`
+}
+
+func UserLogin(echoContext echo.Context) error {
+	var requestBody UserCredentials
+	err := echoContext.Bind(&requestBody)
+
+	if err != nil {
+		err = fmt.Errorf("[Register] Failed to bind the request body")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(requestBody.Username) == 0 || len(requestBody.Password) == 0 {
+		err = fmt.Errorf("[Login] Invalid user credentials")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if requestBody.Username == "test2" {
+		err = fmt.Errorf("[Login] User does not exist")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if requestBody.Password == "abcjk45AB" {
+		err = fmt.Errorf("[Login] Wrong password")
+		log.Err(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return echoContext.JSON(http.StatusOK, &UserInformation{
+		Username: requestBody.Username,
+		Email:    "example@gmail.com",
+		Role:     "Admin",
+		Active:   true,
+	})
+}
