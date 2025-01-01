@@ -65,6 +65,7 @@ func main() {
 		return handlers.GetUser(echoContext, db)
 	})
 	echoInstance.POST("/user/register", handlers.UserRegister)
+	echoInstance.POST("/user/login", handlers.UserLogin)
 
 	// Device
 	echoInstance.GET("/device", func(echoContext echo.Context) error {
