@@ -189,33 +189,47 @@ func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) (
 func FetchAllLocations(database *pgxpool.Pool, ids []string, privateKeys []string) (map[string][]locationModels.DecryptedLocationResult, error) {
 	var decryptedLocationResultReturns = map[string][]locationModels.DecryptedLocationResult{}
 
-	fetchedLocations, err := AppleServerLocations(ids, 7)
-	if err != nil {
-		log.Error().Msg("[Location] Error fetching location from Apple server")
-		return nil, err
-	}
+	// Get the location history
+	for IdIndex, id := range ids {
+		var latestLocation locationModels.LocationResult
+		var locationId int
 
-	// There is no location published
-	if len(fetchedLocations.Results) == 0 {
-		log.Warn().Msg("[Location] Empty fetched location")
-		//return []locationModels.DecryptedLocationResult{}, err
-	}
+		// Get the latest location for each id
+		err := database.QueryRow(context.Background(), "SELECT * FROM \"DeviceLocation\" WHERE \"DatePublished\"=(SELECT MAX(\"DatePublished\") FROM \"DeviceLocation\" WHERE \"DeviceID\"=$1);", id).Scan(&locationId, &latestLocation.Id, &latestLocation.DatePublished, &latestLocation.Description, &latestLocation.StatusCode, &latestLocation.Payload)
 
-	// Split results by device, then append the decrypted location to the corresponding id
-	for _, element := range fetchedLocations.Results {
-		for idIndex, id := range ids {
-			if element.Id == id {
-				// Decrypt element
-				tempDecryptedLocation, err := decrypt.DecryptLocation(element, privateKeys[idIndex])
-				if err != nil {
-					log.Error().Msg("[Location] Error decrypting the location payload at index: " + strconv.Itoa(idIndex))
-					return nil, err
-				}
-
-				decryptedLocationResultReturns[id] = append(decryptedLocationResultReturns[id], tempDecryptedLocation)
-			}
+		if err != nil {
+			log.Err(err).Msg("[Location] Error getting latest location from the database")
+			return nil, err
 		}
+
+		// Query for 7 days
+		queriedLocationHistories, err := database.Query(context.Background(), "SELECT * FROM \"DeviceLocation\" WHERE \"DeviceID\" = $1 AND \"DatePublished\" > $2", id, latestLocation.DatePublished-604800000)
+		if err != nil {
+			log.Err(err).Msg("[Database] Failed to get device location histories")
+			return nil, err
+		}
+
+		// Assign the list of fetched location histories to the corresponding id
+		var tempLocation = locationModels.LocationResult{}
+		for queriedLocationHistories.Next() {
+			err := queriedLocationHistories.Scan(&locationId, &tempLocation.Id, &tempLocation.DatePublished, &tempLocation.Description, &tempLocation.StatusCode, &tempLocation.Payload)
+			if err != nil {
+				log.Err(err).Msg("[Database] Failed to scan location values.")
+				return nil, err
+			}
+
+			// Decrypt each of the queried location history
+			tempDecryptedLocation, err := decrypt.DecryptLocation(tempLocation, privateKeys[IdIndex])
+			if err != nil {
+				log.Error().Msg("[Location] Error decrypting the location payload at index: " + strconv.Itoa(IdIndex))
+				return nil, err
+			}
+
+			decryptedLocationResultReturns[id] = append(decryptedLocationResultReturns[id], tempDecryptedLocation)
+		}
+
 	}
+
 	fmt.Printf("%+v\n", decryptedLocationResultReturns)
 	return decryptedLocationResultReturns, nil
 }
