@@ -203,7 +203,7 @@ func FetchAllLocations(database *pgxpool.Pool, ids []string, privateKeys []strin
 		}
 
 		// Query for 7 days
-		queriedLocationHistories, err := database.Query(context.Background(), "SELECT DISTINCT ON (\"DatePublished\") * FROM \"DeviceLocation\" WHERE \"DeviceID\" = $1 AND \"DatePublished\" > $2", id, latestLocation.DatePublished-259200000)
+		queriedLocationHistories, err := database.Query(context.Background(), "SELECT DISTINCT ON (\"DatePublished\") * FROM \"DeviceLocation\" WHERE \"DeviceID\" = $1 AND \"DatePublished\" > $2", id, latestLocation.DatePublished-159200000)
 		if err != nil {
 			log.Err(err).Msg("[Database] Failed to get device location histories")
 			return nil, err
