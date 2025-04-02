@@ -5,15 +5,13 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"os"
-	"server/database/device"
 	"server/misc/decrypt"
-	databaseModels "server/models/database"
 	locationModels "server/models/location"
 	"server/models/request"
 	responseModels "server/models/response"
@@ -136,54 +134,88 @@ func FetchLocation(database *pgxpool.Pool, ids []string, privateKeys []string) (
 	return decryptedLocationResultValue, nil
 }
 
-func FetchAllLocations(database *pgxpool.Pool) ([]databaseModels.DeviceLocation, error) {
-	var allLocationResults []databaseModels.DeviceLocation
-	var tempLocation databaseModels.DeviceLocation
-	var queriedRows pgx.Rows
+//func FetchAllLocations(database *pgxpool.Pool) ([]databaseModels.DeviceLocation, error) {
+//	var allLocationResults []databaseModels.DeviceLocation
+//	var tempLocation databaseModels.DeviceLocation
+//	var queriedRows pgx.Rows
+//
+//	// Fetch locations from database
+//	queriedRows, err := database.Query(context.Background(), "SELECT * FROM \"DeviceLocation\"")
+//	if err != nil {
+//		log.Err(err).Msg("[Database] Failed to query device locations")
+//		return []databaseModels.DeviceLocation{}, err
+//	}
+//
+//	// Assign the returned locations into the variable
+//	for queriedRows.Next() {
+//		err = queriedRows.Scan(&tempLocation.LocationID, &tempLocation.DeviceID, &tempLocation.DatePublished, &tempLocation.Description, &tempLocation.StatusCode, &tempLocation.Payload)
+//		if err != nil {
+//			log.Err(err).Msg("[Database] Failed to scan device locations")
+//			return []databaseModels.DeviceLocation{}, err
+//		}
+//
+//		allLocationResults = append(allLocationResults, tempLocation)
+//	}
+//
+//	// Get all available devices
+//	devices, err := device.GetDevicesInfo(database, "")
+//	if err != nil {
+//		log.Err(err).Msg("[Database] Failed to fetch device info")
+//		return allLocationResults, err
+//	}
+//
+//	if len(devices) != 0 {
+//		// Array of device id
+//		var deviceIds []string
+//		for _, element := range devices {
+//			deviceIds = append(deviceIds, element.DeviceID)
+//		}
+//
+//		// Fetch locations from Apple server
+//		appleFetchedLocations, err := AppleServerLocations(deviceIds, 1)
+//		if err != nil {
+//			log.Error().Msg("[Location] Error fetching location from Apple server")
+//			return allLocationResults, err
+//		}
+//
+//		// There is no location published
+//		if len(appleFetchedLocations.Results) == 0 {
+//			log.Warn().Msg("[Location] Empty fetched location")
+//		}
+//	}
+//	return allLocationResults, nil
+//}
 
-	// Fetch locations from database
-	queriedRows, err := database.Query(context.Background(), "SELECT * FROM \"DeviceLocation\"")
+func FetchAllLocations(database *pgxpool.Pool, ids []string, privateKeys []string) (map[string][]locationModels.DecryptedLocationResult, error) {
+	var decryptedLocationResultReturns = map[string][]locationModels.DecryptedLocationResult{}
+
+	fetchedLocations, err := AppleServerLocations(ids, 7)
 	if err != nil {
-		log.Err(err).Msg("[Database] Failed to query device locations")
-		return []databaseModels.DeviceLocation{}, err
+		log.Error().Msg("[Location] Error fetching location from Apple server")
+		return nil, err
 	}
 
-	// Assign the returned locations into the variable
-	for queriedRows.Next() {
-		err = queriedRows.Scan(&tempLocation.LocationID, &tempLocation.DeviceID, &tempLocation.DatePublished, &tempLocation.Description, &tempLocation.StatusCode, &tempLocation.Payload)
-		if err != nil {
-			log.Err(err).Msg("[Database] Failed to scan device locations")
-			return []databaseModels.DeviceLocation{}, err
-		}
-
-		allLocationResults = append(allLocationResults, tempLocation)
+	// There is no location published
+	if len(fetchedLocations.Results) == 0 {
+		log.Warn().Msg("[Location] Empty fetched location")
+		//return []locationModels.DecryptedLocationResult{}, err
 	}
 
-	// Get all available devices
-	devices, err := device.GetDevicesInfo(database, "")
-	if err != nil {
-		log.Err(err).Msg("[Database] Failed to fetch device info")
-		return allLocationResults, err
-	}
+	// Split results by device, then append the decrypted location to the corresponding id
+	for _, element := range fetchedLocations.Results {
+		for idIndex, id := range ids {
+			if element.Id == id {
+				// Decrypt element
+				tempDecryptedLocation, err := decrypt.DecryptLocation(element, privateKeys[idIndex])
+				if err != nil {
+					log.Error().Msg("[Location] Error decrypting the location payload at index: " + strconv.Itoa(idIndex))
+					return nil, err
+				}
 
-	if len(devices) != 0 {
-		// Array of device id
-		var deviceIds []string
-		for _, element := range devices {
-			deviceIds = append(deviceIds, element.DeviceID)
-		}
-
-		// Fetch locations from Apple server
-		appleFetchedLocations, err := AppleServerLocations(deviceIds, 1)
-		if err != nil {
-			log.Error().Msg("[Location] Error fetching location from Apple server")
-			return allLocationResults, err
-		}
-
-		// There is no location published
-		if len(appleFetchedLocations.Results) == 0 {
-			log.Warn().Msg("[Location] Empty fetched location")
+				decryptedLocationResultReturns[id] = append(decryptedLocationResultReturns[id], tempDecryptedLocation)
+			}
 		}
 	}
-	return allLocationResults, nil
+	fmt.Printf("%+v\n", decryptedLocationResultReturns)
+	return decryptedLocationResultReturns, nil
 }

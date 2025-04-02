@@ -21,27 +21,39 @@ func GetLocations(echoContext echo.Context, database *pgxpool.Pool) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	// Fetch all locations
-	if len(requestBody.PrivateKeys) == 0 || len(requestBody.Ids) == 0 {
-		returnLocation, err := location.FetchAllLocations(database)
+	//// Fetch all locations
+	//if len(requestBody.PrivateKeys) == 0 || len(requestBody.Ids) == 0 {
+	//	returnLocation, err := location.FetchAllLocations(database)
+	//
+	//	if err != nil {
+	//		msg := "[Location] Failed to fetch all locations"
+	//		log.Error().Msg(msg)
+	//		return echo.NewHTTPError(http.StatusInternalServerError, msg)
+	//	}
+	//
+	//	return echoContext.JSON(http.StatusOK, returnLocation)
+	//}
+
+	if requestBody.Days == 0 {
+		// Fetch location based on device id
+		returnLocation, err := location.FetchLocation(database, requestBody.Ids, requestBody.PrivateKeys)
 
 		if err != nil {
-			msg := "[Location] Failed to fetch all locations"
+			msg := "[Location] Failed to fetch and decrypt location"
 			log.Error().Msg(msg)
 			return echo.NewHTTPError(http.StatusInternalServerError, msg)
 		}
 
 		return echoContext.JSON(http.StatusOK, returnLocation)
+	} else {
+		returnLocations, err := location.FetchAllLocations(database, requestBody.Ids, requestBody.PrivateKeys)
+
+		if err != nil {
+			msg := "[Location] Failed to fetch and decrypt all locations"
+			log.Error().Msg(msg)
+			return echo.NewHTTPError(http.StatusInternalServerError, msg)
+		}
+
+		return echoContext.JSON(http.StatusOK, returnLocations)
 	}
-
-	// Fetch location based on device id
-	returnLocation, err := location.FetchLocation(database, requestBody.Ids, requestBody.PrivateKeys)
-
-	if err != nil {
-		msg := "[Location] Failed to fetch and decrypt location"
-		log.Error().Msg(msg)
-		return echo.NewHTTPError(http.StatusInternalServerError, msg)
-	}
-
-	return echoContext.JSON(http.StatusOK, returnLocation)
 }
